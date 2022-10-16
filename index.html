@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+
+    <body>
+      <form id="form">
+        <label for="fname">Vārds</label><br>
+        <input name="fname" type="text"><br>
+
+        <label for="lname">Uzvārds</label><br>
+        <input name="lname" type="text"><br>
+
+        <label for="email">E-pasts</label><br>
+        <input name="email" type="text"><br>
+
+        <label for="phone">Tālruņa numurs</label><br>
+        <input name="phone" type="text"><br>
+
+        <label for="receive-type">Saņemšanas veids</label><br>
+        <select name="receive-type" id="receive-type">
+          <option value="home-delivery">Piegāde uz mājām</option>
+          <option value="parcel-delivery">Piegāde uz pakomātu</option>
+          <option value="store-delivery">Saņemšana veikalā</option>
+        </select><br>
+
+        <label for="delivery-address">Piegādes adrese</label><br>
+        <input name="delivery-address" type="text"><br>
+
+        <label for="request-type">Pieteikuma veids</label><br>
+        <select name="request-type" id="request-type"">
+          <option value="repair">Detaļas remonts</option>
+          <option value="assembly">Datoru komplektēšana</option>
+        </select><br>
+
+        <br><button type="submit">Turpināt</button><br>
+
+        <!-- TODO: after pressing submit button show either assembly or 
+        part repair form depending on request-type selected value -->
+
+      </form> 
+    </body>
+
+    <!-- TODO: move javascript to seperate file -->
+    <script>
+      const form = document.getElementById('form');
+ 
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        var serializeForm = function (form) {
+          var obj = {};
+          var formData = new FormData(form);
+          for (var key of formData.keys()) {
+            obj[key] = formData.get(key);
+          }
+          return obj;
+        };
+
+        //TODO: change POST request to our GO backend controller
+        fetch('https://reqres.in/api/users"', { 
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(serializeForm(form))
+        })
+          .then(console.log(JSON.stringify(serializeForm(form)))) // Form data serialized form data object json sent to API
+          .then(res => res.json())
+          .then(res => console.log(res)) // API response with received json
+        })
+    </script>
+    
+</html>
