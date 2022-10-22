@@ -66,7 +66,7 @@ func SendToQueue[T request](r T) {
 }
 
 func main() {
-	db, err := sql.Open("driver-name", "database=test1")//TODO: choose MySQLDriver; https://github.com/golang/go/wiki/SQLDrivers
+	/*db, err := sql.Open("driver-name", "database=test1")//TODO: choose MySQLDriver; https://github.com/golang/go/wiki/SQLDrivers
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func main() {
 	mutex <- true
 	queue = make(chan request, 100)
 	isRunning = true
-	go RequestInserter(db)
+	go RequestInserter(db)*/
 	
 	http.HandleFunc("/", MainHandler)
 	
@@ -112,11 +112,13 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 		if t.Type == "repair" {
 			var repReq requestRepair
 			json.Unmarshal(body, &repReq)
-			SendToQueue(repReq)
+			//SendToQueue(repReq)
+			fmt.Println(repReq)
 		} else if t.Type == "assembly" {
 			var assReq requestAssembly
 			json.Unmarshal(body, &assReq)
-			SendToQueue(assReq)
+			//SendToQueue(assReq)
+			fmt.Println(assReq)
 		}
 	} else {
 		w.WriteHeader(405)
