@@ -62,8 +62,13 @@
         };
 
         //TODO: change POST request to our GO backend controller
-        fetch('https://reqres.in/api/users"', { 
+        fetch('http://localhost:8080/"', { 
           method: 'POST',
+          mode: 'cors',
+          cache: 'no-cache',
+          credentials: 'same-origin',
+          redirect: 'follow',
+          referrerPolicy: 'no-referrer',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(serializeForm(form))
         })
