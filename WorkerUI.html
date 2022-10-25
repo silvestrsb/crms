@@ -54,7 +54,7 @@ crossorigin="anonymous">
             var row = `<tr>
                     <td>${data[i].Piepr}</td>
                     <td> 
-                        <a onclick='openDescription(j)' href="#">${data[i].Darb1}</a>
+                        <a onclick='openDescription(j)' href="#" id=${i}>${data[i].Darb1}</a>
                     </td>
                     <td>${data[i].Darb2}</td>
                     <td>${data[i].Darb3}</td>
@@ -70,6 +70,23 @@ crossorigin="anonymous">
     }
 
     function openDescription(row) {
-        console.log('Row clicked: ' + row);
+        //console.log('Row clicked: ' + row);
     }
+
+
+    // Create event listener
+document.addEventListener('click', (e) =>
+  {
+    // Retrieve id from clicked element
+    let elementId = e.target.id;
+    // If element has id
+    if (elementId !== '') {
+        console.log(elementId);
+    }
+    // If element has no id
+    else { 
+        console.log("An element without an id was clicked.");
+    }
+  }
+);
 </script>
