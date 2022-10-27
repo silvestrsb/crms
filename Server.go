@@ -9,10 +9,14 @@ import (
 	"encoding/json"
 	"time"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 //go:embed index.html
 var mainHTML string
+
+//go:embed script.js
+var script string
 
 var isRunning bool//TODO: make contollable by admin
 var queue chan request
@@ -29,7 +33,9 @@ type (
 		Phone string `json:"phone"`
 		RType string `json:"receive-type"`
 		DAdress string `json:"delivery-address"`
-		//TODO: add repair specific fields
+		PTypre string `json:"part-type"`
+		Model string `json:"model"`
+		Problem string `json:"repair-description"`
 	}
 	requestAssembly struct {
 		FName string `json:"fname"`
@@ -38,7 +44,13 @@ type (
 		Phone string `json:"phone"`
 		RType string `json:"receive-type"`
 		DAdress string `json:"delivery-address"`
-		//TODO: add assembly specific fields
+		Case string `json:"case"`
+		Motherboard string `json:"motherboard"`
+		CPU string `json:"cpu"`
+		GPU string `json:"gpu"`
+		RAM string `json:"ram"`
+		Storage string `json:"storage"`
+		Notes string `json:"notes"`
 	}
 	request interface {
 		AddToDB(db *sql.DB)
@@ -46,17 +58,13 @@ type (
 )
 
 func (r requestRepair) AddToDB(db *sql.DB) {
-	db.Exec("INSERT INTO Requests values(0, '"+r.FName+"', '"+r.LName+"', '"+r.Email+"', '"+r.Phone+"', '"+r.RType+"', '"+r.DAdress+"', 0, 0, 'statuss', '', '"+fmt.Sprint(time.Now())[:10]+"')")//placeholder
-	//ReceiptType:byte/string???
-	//TODO: check if adding time works
-	//TODO: make actual sql request
+	db.Exec("INSERT INTO Repairs values(NULL, '"+r.PTypre+"', '"+r.Model+"', '"+r.Problem+"')")
+	db.Exec("INSERT INTO Requests values(NULL, '"+r.FName+"', '"+r.LName+"', '"+r.Email+"', '"+r.Phone+"', '"+r.RType+"', '"+r.DAdress+"', LAST_INSERT_ID(), NULL, 'pending', '', '"+fmt.Sprint(time.Now())[:10]+"')")
 }
 
 func (r requestAssembly) AddToDB(db *sql.DB) {
-	db.Exec("INSERT INTO Requests values(0, '"+r.FName+"', '"+r.LName+"', '"+r.Email+"', '"+r.Phone+"', '"+r.RType+"', '"+r.DAdress+"', 0, 0, 'statuss', '', '"+fmt.Sprint(time.Now())[:10]+"')")//placeholder
-	//ReceiptType:byte/string???
-	//TODO: check if adding time works
-	//TODO: make actual sql request
+	db.Exec("INSERT INTO Complectations values(NULL, '"+r.Case+"', '"+r.Motherboard+"', '"+r.CPU+"', '"+r.GPU+"', '"+r.RAM+"', '"+r.Storage+"', '"+r.Notes+"')")
+	db.Exec("INSERT INTO Requests values(NULL, '"+r.FName+"', '"+r.LName+"', '"+r.Email+"', '"+r.Phone+"', '"+r.RType+"', '"+r.DAdress+"', NULL, LAST_INSERT_ID(), 'pending', '', '"+fmt.Sprint(time.Now())[:10]+"')")
 }
 
 func SendToQueue[T request](r T) {
@@ -66,40 +74,39 @@ func SendToQueue[T request](r T) {
 }
 
 func main() {
-	/*db, err := sql.Open("driver-name", "database=test1")//TODO: choose MySQLDriver; https://github.com/golang/go/wiki/SQLDrivers
+	db, err := sql.Open("mysql", "root:Just_password@tcp(localhost:3306)/server")
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 	mutex = make(chan bool, 1)
 	mutex <- true
 	queue = make(chan request, 100)
 	isRunning = true
-	go RequestInserter(db)*/
+	go RequestInserter(db)
 	
 	http.HandleFunc("/", MainHandler)
 	
-	log.Fatal(http.ListenAndServe(":8080", nil))//TODO: change host
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func MainHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Access-Control-Allow-Methods", "GET, POST")
 	w.Header().Add("Access-Control-Allow-Headers", "content-type")
 	w.Header().Add("Access-Control-Allow-Origin","*")
-	/*
-	 * 	method: 'POST', // *GET, POST, PUT, DELETE, etc.
-		mode: 'cors', // no-cors, *cors, same-origin
-		cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-		credentials: 'same-origin', // include, *same-origin, omit
-		headers: {
-		  'Content-Type': 'application/json'
-		},
-		redirect: 'follow', // manual, *follow, error
-		referrerPolicy: 'no-referrer', // no-referrer, *client
-		body: ...
-	 *///TODO: add some of those into js request (mode is mandatory)
 	
 	if r.Method == "GET" {
-		io.WriteString(w, mainHTML)
+		switch r.URL.Path {
+			case "/":
+				io.WriteString(w, mainHTML)
+			case "/script.js":
+				io.WriteString(w, script)
+			case "/favicon.ico":
+				http.ServeFile(w, r, "pictures/favicon.ico")
+			default:
+				w.WriteHeader(405)
+		}
+		
 	} else if r.Method == "POST" {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -112,13 +119,11 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 		if t.Type == "repair" {
 			var repReq requestRepair
 			json.Unmarshal(body, &repReq)
-			//SendToQueue(repReq)
-			fmt.Println(repReq)
+			SendToQueue(repReq)
 		} else if t.Type == "assembly" {
 			var assReq requestAssembly
 			json.Unmarshal(body, &assReq)
-			//SendToQueue(assReq)
-			fmt.Println(assReq)
+			SendToQueue(assReq)
 		}
 	} else {
 		w.WriteHeader(405)
