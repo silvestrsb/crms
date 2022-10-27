@@ -1,0 +1,85 @@
+/*==============================================================*/
+/* DBMS name:      MySQL 5.0                                    */
+/* Created on:     23.10.2022 17:51:26                          */
+/*==============================================================*/
+
+
+drop table if exists Accounts;
+
+drop table if exists Audit;
+
+drop table if exists Complectations;
+
+drop table if exists Repairs;
+
+drop table if exists Requests;
+
+/*==============================================================*/
+/* Table: Accounts                                              */
+/*==============================================================*/
+create table Accounts
+(
+   AID                  int not null AUTO_INCREMENT,
+   Login                text not null,
+   Password             text not null,
+   primary key (AID)
+);
+
+/*==============================================================*/
+/* Table: Audit                                                 */
+/*==============================================================*/
+create table Audit
+(
+   AUID                 int not null AUTO_INCREMENT,
+   WorkerID             int not null,
+   Description          text not null,
+   primary key (AUID)
+);
+
+/*==============================================================*/
+/* Table: Complectations                                        */
+/*==============================================================*/
+create table Complectations
+(
+   CID                  int not null AUTO_INCREMENT,
+   CaseT                text not null,
+   Motherboard          text not null,
+   CPU                  text not null,
+   GPU                  text not null,
+   RAM                  text not null,
+   Storage              text not null,
+   TermsRequests        text,
+   primary key (CID)
+);
+
+/*==============================================================*/
+/* Table: Repairs                                               */
+/*==============================================================*/
+create table Repairs
+(
+   RID                  int not null AUTO_INCREMENT,
+   ComponentType        text not null,
+   Model                text not null,
+   ProblemDescription   text not null,
+   primary key (RID)
+);
+
+/*==============================================================*/
+/* Table: Requests                                              */
+/*==============================================================*/
+create table Requests
+(
+   ID                   int not null AUTO_INCREMENT,
+   FName                text not null,
+   LName                text not null,
+   Email                text not null,
+   PhoneNumber          text,
+   ReceiptType          text not null,
+   DeliveryAddress      text,
+   RepairID             int,
+   ComplectationID      int,
+   Status               text not null,
+   LastComment          text,
+   Date                 date not null,
+   primary key (ID)
+);
