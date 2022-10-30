@@ -26,7 +26,7 @@ function buildTable(data){
         var row = `<tr>
                 <td>${data[i].Piepr}</td>
                 <td> 
-                    <a data-bs-toggle="modal" data-bs-target="#modal-assembly" id="continue-btn" href="#" id=${i}>${data[i].Darb1}</a>
+                    <a data-bs-toggle="modal" data-bs-target="#modal-assembly" href="#" id=${i}>${data[i].Darb1}</a>
                 </td>
                 <td>${data[i].Darb2}</td>
                 <td>${data[i].Darb3}</td>
@@ -50,11 +50,7 @@ document.addEventListener('click', (e) =>
 let elementId = e.target.id;
 // If element has id
 if (elementId !== '') {
-    var i = 0;
-    i = Number.parseInt(elementId);
-    console.log(typeof(i));
-    console.log(orderArray[2].Piepr);
-    if (orderArray[2].Piepr.includes('Komplektēšana')) {
+    if (orderArray[parseInt(elementId)].Piepr.includes('Komplektēšana')) {
         hideRequestTypeForms();
         $('complectation-form').style.display = 'block';
     }
