@@ -29,6 +29,8 @@
         width: 190px;
       }
     </style>
+    <!-- Add link -->
+    <link rel="icon" href="/favicon.ico?v=1"/>
   </head>
     <body>
       <nav class="navbar navbar-dark bg-dark">
@@ -58,6 +60,7 @@
       </nav>
       
       <br><br><br>
+      <!-- add </div> -->
       <div id="entire-form" class="center" style="padding-left: 30px;">
         <div id="form-top-icon" style="padding-left: 50px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="currentColor" class="bi bi-fire" viewBox="0 0 16 16">
@@ -65,7 +68,7 @@
           </svg>
         </div>
 
-        <div id='base-form'>
+        <div id='base-form'><!-- change '' to "" ?? -->
           <!-- TODO: Change JSON key value identifiers to match docummentation and GO backend requirements -->
           <!-- TODO: requestType: assembly - change inputs to select dropdowns -->
           <form id="form">
@@ -105,7 +108,7 @@
                     <h5 class="modal-title">Pieteikuma izveide</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                   </div>
-                  <div class="modal-body"">
+                  <div class="modal-body"><!-- rem "-->
                     <div id="assembly-form" class="text-center">
                       <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-pc" viewBox="0 0 16 16">
                         <path d="M5 0a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V1a1 1 0 0 0-1-1H5Zm.5 14a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1Zm2 0a.5.5 0 1 1 0 1 .5.5 0 0 1 0-1ZM5 1.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5ZM5.5 3h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1 0-1Z"/>
@@ -168,7 +171,7 @@
                       </svg><br>
 
                       <label for="part-type">Detaļas veids</label><br> 
-                      <select name="part-type" id="part-type""> 
+                      <select name="part-type" id="part-type"> <!-- rem "-->
                         <option value=0></option>
                         <option value=1>Mātesplate</option> 
                         <option value=2>Procesors</option>

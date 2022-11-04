@@ -1,18 +1,7 @@
 var $ = function(id) { return document.getElementById(id); }; //shorthand for document.getElementById command
 
 var orderArray = [
-    {'Piepr':'Datora Komplektēšana: 20.09.2022, Roberts Buks',
-     'Darb1':'Skatīt detaļas', 
-     'Darb2':'Atsūtīt vēstuli',
-     'Darb3':'Amainīt statusu'},
-     {'Piepr':'Datora Komplektēšana: 15.11.2012, Jana Vīgupe',
-     'Darb1':'Skatīt detaļas', 
-     'Darb2':'Atsūtīt vēstuli',
-     'Darb3':'Amainīt statusu'},
-     {'Piepr':'Datora Komplektēšana: 15.11.2012, Jana Vīgupe',
-     'Darb1':'Skatīt detaļas', 
-     'Darb2':'Atsūtīt vēstuli',
-     'Darb3':'Amainīt statusu'}
+    %s
 ]
 
 buildTable(orderArray)
@@ -30,7 +19,7 @@ function buildTable(data){
                 </td>
                 <td>${data[i].Darb2}</td>
                 <td>${data[i].Darb3}</td>
-            </tr>`    
+            </tr>`    //change id=${i} -> id=${data[i].Id}
         j++;
         table.innerHTML += row    
     }
