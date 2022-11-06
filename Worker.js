@@ -11,15 +11,21 @@ var j = 0;
 function buildTable(data){
     var table = document.getElementById('ordersTable')
 
+    console.log(orderArray);
+    //TODO: hardcoded GO template values (current harcoded Id = 5 for all orders) to real db values
+    console.log("^ orderArray from GetDBInitInfo, contains each requests Id from DB (currently hardcoded)");
+
     for(i = 0; i < data.length; i++) {
         var row = `<tr>
                 <td>${data[i].Piepr}</td>
                 <td> 
-                    <a data-bs-toggle="modal" data-bs-target="#modal-assembly" href="#" id=${i}>${data[i].Darb1}</a>
+                    <a data-bs-toggle="modal" data-bs-target="#modal-assembly" href="#" id=${data[i].Id}>${data[i].Darb1}</a>
                 </td>
                 <td>${data[i].Darb2}</td>
-                <td>${data[i].Darb3}</td>
-            </tr>`    //change id=${i} -> id=${data[i].Id}
+                <td>
+                    <a data-bs-toggle="modal" data-bs-target="#modal-assembly" href="#" id=updateId${data[i].Id}>${data[i].Darb3}</a>
+                </td>
+            </tr>`
         j++;
         table.innerHTML += row    
     }
@@ -32,26 +38,92 @@ var hideRequestTypeForms = function() {
   hideRequestTypeForms();
 
 
-// Create event listener
-document.addEventListener('click', (e) =>
-{
-// Retrieve id from clicked element
-let elementId = e.target.id;
-// If element has id
-if (elementId !== '') {
-    if (orderArray[parseInt(elementId)].Piepr.includes('Komplektēšana')) {
-        hideRequestTypeForms();
-        $('complectation-form').style.display = 'block';
+document.addEventListener('click', (e) => {
+     let elementId = e.target.id;
+     //console.log(elementId);
+
+    // Retrieve id from clicked element - See Details - GetByIndex
+    if (!isNaN(elementId) && elementId.length > 0) {
+        
+        // Send GetByIndex?id={val} request
+        var myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        var raw = JSON.stringify({});
+
+        var requestOptions = {
+            method: 'GET',
+            headers: myHeaders,
+            //body: raw,
+            redirect: 'follow'
+        };
+
+        var requestId = elementId;
+        console.log("Clicked on id: " + requestId);
+        
+        var responseJson;
+
+        fetch("http://localhost:8080/GetByIndex?id=" + requestId, requestOptions)
+        .then(response => response.text())
+        .then(result =>  { 
+                console.log("GetByIndex " + requestId + " POST response: " + result);
+                
+                var json = JSON.parse(result);
+
+                if (json.reqType=="Complectation") {
+                    hideRequestTypeForms();
+                    $('complectation-form').style.display = 'block';
+                    //email;notes;date
+                    $("name").innerHTML = json.name;
+                    $("case").innerHTML = json.case;
+                    $("motherboard").innerHTML = json.motherboard;
+                    $("cpu").innerHTML = json.cpu;
+                    $("videocard").innerHTML = json.videocard;
+                    $("ram").innerHTML = json.ram;
+                    $("memory").innerHTML = json.memory;
+                    $("tel").innerHTML = json.tel; 
+                    $("deliv").innerHTML = json.deliv;
+                    $("status").innerHTML = json.status;
+                }
+                else {
+                    hideRequestTypeForms();
+                    $('purchace-form').style.display = 'block';
+					//email;notes;date
+                    $("repair-name").innerHTML = json.name;
+                    $("component-type").innerHTML = json.componentType;
+                    $("model").innerHTML = json.model;
+                    $("repair-tel").innerHTML = json.tel;
+                    $("repair-deliv").innerHTML = json.deliv;
+                    $("repair-status").innerHTML = json.status;
+                }
+            })
+        .catch(error => console.log('error', error));
     }
-    else {
+
+    
+    if (elementId.includes("updateId")) {
+       console.log("Update Status clicked: " + elementId);
+        /* TODO: updateStatus method 
         hideRequestTypeForms();
-        $('purchace-form').style.display = 'block';
+        $('update-form').style.display = 'block'; //TODO
+
+
+        var myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
+        var raw = JSON.stringify({});
+
+        var requestOptions = {
+        method: 'PUT',
+        headers: myHeaders,
+        body: raw,
+        redirect: 'follow'
+        };
+
+        fetch("http://localhost:8080/UpdateById?=" + id, requestOptions)
+        .then(response => response.text())
+        .then(result => console.log(result))
+        .catch(error => console.log('error', error));
+        */
     }
-    console.log(elementId);
-}
-// If element has no id
-else { 
-    console.log("An element without an id was clicked.");
-}
-}
-);
+ 
+});

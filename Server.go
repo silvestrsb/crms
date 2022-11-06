@@ -15,6 +15,7 @@ import (
 	"os"
 	"strings"
 	"context"
+	"strconv"
 	//"os/exec"
 )
 
@@ -35,8 +36,10 @@ var queue chan request
 var mutex chan bool
 var InitReqChan chan bool
 var InitResChan chan *sql.Rows
-var IDReqChan chan int
+var IDReqChan chan RInfo
 var IDResChan chan *sql.Rows
+var IDTReqChan chan int
+var IDTResChan chan *sql.Rows
 var SettingsV Settings
 var fd int
 var done chan bool
@@ -98,6 +101,10 @@ type (
 			address string
 			dbname string
 		}
+	}
+	RInfo struct {
+		id int
+		T string
 	}
 )
 
@@ -176,13 +183,14 @@ func main() {
 		queue = make(chan request, 100)
 		InitReqChan = make(chan bool, 1)
 		InitResChan = make(chan *sql.Rows, 1)
-		IDReqChan = make(chan int, 1)
+		IDReqChan = make(chan RInfo, 1)
 		IDResChan = make(chan *sql.Rows, 1)
+		IDTReqChan = make(chan int, 1)
+		IDTResChan = make(chan *sql.Rows, 1)
 		done = make(chan bool, 2)
 		go RequestInserter(db)
 		go RequestGetter(db)
 	}
-	
 	http.HandleFunc("/", MainHandler)
 	
 	server := http.Server{Addr: SettingsV.Server.address}
@@ -248,9 +256,9 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 				res := fmt.Sprintf(WUIscript, jsoninfo)
 				io.WriteString(w, res)
 			case "/GetByIndex":
-				var id int//TODO:read
+				id, _ :=strconv.Atoi(r.URL.Query()["id"][0])
 				res := GetDBInfoByID(id)
-				io.WriteString(w, res)//TODO?:change
+				io.WriteString(w, res)
 			default:
 				w.WriteHeader(405)
 		}
@@ -306,16 +314,33 @@ func RequestGetter(db *sql.DB) {
 	for isRunning {
 		select {
 			case <-InitReqChan:
-				r, err := db.Query("SELECT FName, LName, Date, CASE WHEN RepairID IS NULL THEN 'Complectation' ELSE 'Repair' END AS REQUEST_TYPE FROM requests WHERE status != 'comlete'")
+				r, err := db.Query("SELECT ID, FName, LName, Date, CASE WHEN RepairID IS NULL THEN 'Complectation' ELSE 'Repair' END AS REQUEST_TYPE FROM requests WHERE status != 'comlete'")
 				if err != nil {
 					fmt.Println(err)
+					InitResChan <- nil
 				} else {
 					InitResChan <- r
 				}
-			case id:=<-IDReqChan:
-				r, err := db.Query("SELECT CASE WHEN RepairID IS NULL THEN 'Complectation' ELSE 'Repair' END AS REQUEST_TYPE FROM requests WHERE ID=?; SELECT * FROM Repairs_view WHERE ID=?; SELECT * FROM Complectations_view WHERE ID=?", id, id, id)
+			case id:=<-IDTReqChan:
+				q:=fmt.Sprintf("SELECT CASE WHEN RepairID IS NULL THEN 'Complectation' ELSE 'Repair' END AS REQUEST_TYPE FROM requests WHERE ID=%d", id)
+				r, err := db.Query(q)
 				if err != nil {
 					fmt.Println(err)
+					IDTResChan <- nil
+				} else {
+					IDTResChan <- r
+				}
+			case inf:=<-IDReqChan:
+				var q string
+				switch inf.T {
+					case "Complectation": q=fmt.Sprintf("SELECT FName, LName, Email, PhoneNumber, ReceiptType, DeliveryAddress, Status, Date, CaseT, Motherboard, CPU, GPU, RAM, Storage, TermsRequests FROM Complectations_view WHERE ID=%d", inf.id)
+					case "Repair": q=fmt.Sprintf("SELECT FName, LName, Email, PhoneNumber, ReceiptType, DeliveryAddress, Status, Date, ComponentType, Model, ProblemDescription FROM Repairs_view WHERE ID=%d", inf.id)
+					default: q=""
+				}
+				r, err := db.Query(q)
+				if err != nil {
+					fmt.Println(err)
+					IDResChan <- nil
 				} else {
 					IDResChan <- r
 				}
@@ -326,54 +351,85 @@ func RequestGetter(db *sql.DB) {
 }
 
 func GetDBInfoByID(id int) string {
-	IDReqChan <- id
-	resRows := <- IDResChan
-	resRows.Next()
-	var typ string
-	resRows.Scan(&typ)
 	var res string
-	switch typ {
-		case "Repair":
-			var buff requestRepair
-			resRows.NextResultSet()
-			resRows.Next()
-			resRows.Scan(&buff.FName,&buff.LName,&buff.Email,&buff.Phone,&buff.RType,&buff.DAdress,&buff.Status,&buff.Date,&buff.PType,&buff.Model,&buff.Problem)
-			fmt.Println(buff)
-			res=""//TODO:add
-		case "Complectation":
-			var buff requestAssembly
-			resRows.NextResultSet()
-			resRows.NextResultSet()
-			resRows.Next()
-			resRows.Scan(&buff.FName,&buff.LName,&buff.Email,&buff.Phone,&buff.RType,&buff.DAdress,&buff.Status,&buff.Date, &buff.Case, &buff.Motherboard, &buff.CPU, &buff.GPU, &buff.RAM, &buff.Storage, &buff.Notes)
-			fmt.Println(buff)
-			res=""//TODO:add
-		default :
-			fmt.Println("Is this Riekstiņš order?")
-			res=""//TODO:add all fields with err msg
+	if SettingsV.Server.dbconnect {
+		var T string
+		IDTReqChan <- id
+		resRows := <- IDTResChan
+		resRows.Next()
+		resRows.Scan(&T)
+		IDReqChan <- RInfo{id,T}
+		resRows = <- IDResChan
+		resRows.Next()
+		switch T {
+			case "Repair":
+				var buff requestRepair
+				resRows.Scan(&buff.FName,&buff.LName,&buff.Email,&buff.Phone,&buff.RType,&buff.DAdress,&buff.Status,&buff.Date,&buff.PType,&buff.Model,&buff.Problem)
+				var template string = `{"name": "%s %s","email": "%s","reqType": "%s","componentType": "%s","model": "%s","tel": "%s","deliv": "%s","status": "%s","problem": "%s","date": "%s"}`
+				var delivery string
+				switch buff.RType {
+					case "home-delivery": delivery=buff.DAdress
+					case "parcel-delivery": delivery="Pakomātā (uz "+buff.DAdress+")"
+					case "store-delivery": delivery="Veikalā"
+					default: delivery="Veikalā"
+				}
+				res=fmt.Sprintf(template,buff.FName,buff.LName,buff.Email,T,buff.PType,buff.Model,buff.Phone,delivery,buff.Status,buff.Problem,&buff.Date)
+			case "Complectation":
+				var buff requestAssembly
+				resRows.Scan(&buff.FName,&buff.LName,&buff.Email,&buff.Phone,&buff.RType,&buff.DAdress,&buff.Status,&buff.Date, &buff.Case, &buff.Motherboard, &buff.CPU, &buff.GPU, &buff.RAM, &buff.Storage, &buff.Notes)
+				var template string = `{"name": "%s %s","email": "%s","reqType": "%s","case": "%s","motherboard": "%s","cpu": "%s","videocard": "%s","ram": "%s","memory": "%s","tel": "%s","deliv": "%s","status": "%s","notes": "%s","date": "%s"}`
+				var delivery string
+				switch buff.RType {
+					case "home-delivery": delivery=buff.DAdress
+					case "parcel-delivery": delivery="Pakomātā (uz "+buff.DAdress+")"
+					case "store-delivery": delivery="Veikalā"
+					default: delivery="Veikalā"
+				}
+				res=fmt.Sprintf(template,buff.FName,buff.LName,buff.Email,T,buff.Case, buff.Motherboard, buff.CPU, buff.GPU, buff.RAM, buff.Storage,buff.Phone,delivery,buff.Status,buff.Notes,&buff.Date)
+			default:
+				fmt.Println("Is this Riekstiņš order?")
+				res=`{"name": "Error","email": "Error","reqType": "Error","componentType": "Error","model": "Error","tel": "Error","deliv": "Error","status": "Error","problem": "Error"}`
+		}
+	} else {
+		date:=fmt.Sprint(time.Now())
+		templateRep := `{"name": "%s %s","email": "%s","reqType": "%s","componentType": "%s","model": "%s","tel": "%s","deliv": "%s","status": "%s","problem": "%s","date": "%s"}`
+		templateComp := `{"name": "%s %s","email": "%s","reqType": "%s","case": "%s","motherboard": "%s","cpu": "%s","videocard": "%s","ram": "%s","memory": "%s","tel": "%s","deliv": "%s","status": "%s","notes": "%s","date": "%s"}`
+		switch id {
+			case 0:res=fmt.Sprintf(templateRep,"FName1","LName1","Example1@gmail.com","Repair","CT1","Mod1","+371 00000000","Number1 Street, Town1","pending","Some description 1",date)
+			case 1:res=fmt.Sprintf(templateRep,"FName2","LName2","Example2@gmail.com","Repair","CT2","Mod2","+371 11111111","Pakomātā (uz Number2 Street, Town2)","processing","Some description 2",date)
+			case 3:res=fmt.Sprintf(templateRep,"FName4","LName4","Example4@gmail.com","Repair","CT3","Mod3","+371 22222222","Veikalā","canceled","Some description 3",date)
+			case 2:res=fmt.Sprintf(templateComp,"FName3","LName3","Example3@gmail.com","Complectation","case1","mother1","cpu1","gpu1","ram1","mem1","+371 33333333","Veikalā","pending","Some description 1",date)
+			case 4:res=fmt.Sprintf(templateComp,"FName5","LName5","Example5@gmail.com","Complectation","case2","mother2","cpu2","gpu2","ram2","mem2","+371 44444444","Number5 Street, Town9","delivering","Some description 2",date)
+			case 5:res=fmt.Sprintf(templateComp,"FName6","LName6","Example6@gmail.com","Complectation","case3","mother3","cpu3","gpu3","ram3","mem3","+371 55555555","Veikalā","waiting","Some description 3",date)
+			case 6:res=fmt.Sprintf(templateRep,"Aigars","Riekstiņš","Devil@gmail.com","Repair","compType","Model","+666666","Class No9","pending","","2020-09-01")
+			case 7:res=fmt.Sprintf(templateComp,"Aigars","Riekstiņš","Devil@gmail.com","Complectation","CaseName","MoboName","cpuName","gpuName","ramName","memoryName","+666666","Veikalā","pending","","2020-09-01")
+			default:res=fmt.Sprintf(templateRep,"Error","Error","Error","Error","Error","Error","Error","Error","Error","Error","Error")
+		}
 	}
 	return res
 }
 
 func GetDBInitInfo() string {
 	var resjson string
-	var template string = `{'Piepr':'%s: %s, %s %s', 'Darb1':'Skatīt detaļas','Darb2':'Atsūtīt vēstuli','Darb3':'Amainīt statusu'},`
+	var template string = `{'Piepr':'%s: %s, %s %s', 'Darb1':'Skatīt detaļas','Darb2':'Atsūtīt vēstuli','Darb3':'Samainīt statusu','Id':'%d'},`
 	var ress []BasicInfo
 	if SettingsV.Server.dbconnect {
 		InitReqChan <- true
 		resRows := <- InitResChan
 		for resRows.Next() {
 			var res BasicInfo
-			resRows.Scan(&res.FName,&res.LName,&res.CreationDate,&res.RType)
+			resRows.Scan(&res.ID,&res.FName,&res.LName,&res.CreationDate,&res.RType)
 			ress = append(ress, res)
 		}
 	} else {
 		ress = append(ress, BasicInfo{0, "Repair", fmt.Sprint(time.Now())[:10], "FName1", "LName1"})
-		ress = append(ress, BasicInfo{0, "Repair", fmt.Sprint(time.Now())[:10], "FName2", "LName2"})
-		ress = append(ress, BasicInfo{0, "Complectation", fmt.Sprint(time.Now())[:10], "FName3", "LName3"})
-		ress = append(ress, BasicInfo{0, "Repair", fmt.Sprint(time.Now())[:10], "FName4", "LName4"})
-		ress = append(ress, BasicInfo{0, "Complectation", fmt.Sprint(time.Now())[:10], "FName5", "LName5"})
-		ress = append(ress, BasicInfo{0, "Complectation", fmt.Sprint(time.Now())[:10], "FName6", "LName6"})
+		ress = append(ress, BasicInfo{1, "Repair", fmt.Sprint(time.Now())[:10], "FName2", "LName2"})
+		ress = append(ress, BasicInfo{2, "Complectation", fmt.Sprint(time.Now())[:10], "FName3", "LName3"})
+		ress = append(ress, BasicInfo{3, "Repair", fmt.Sprint(time.Now())[:10], "FName4", "LName4"})
+		ress = append(ress, BasicInfo{4, "Complectation", fmt.Sprint(time.Now())[:10], "FName5", "LName5"})
+		ress = append(ress, BasicInfo{5, "Complectation", fmt.Sprint(time.Now())[:10], "FName6", "LName6"})
+		ress = append(ress, BasicInfo{6, "Repair", "2020-09-01", "Aigars", "Riekstiņš"})
+		ress = append(ress, BasicInfo{7, "Complectation", "2020-09-01", "Aigars", "Riekstiņš"})
 	}
 	for _, src := range ress {
 		var tp string
@@ -382,7 +438,7 @@ func GetDBInitInfo() string {
 			case "Complectation":tp="Datora Komplektēšana"
 			default:tp="This is totaly Riekstiņš order!"
 		}
-		resjson+=fmt.Sprintf(template, tp, src.CreationDate, src.FName, src.LName)
+		resjson+=fmt.Sprintf(template, tp, src.CreationDate, src.FName, src.LName, src.ID)
 	}
 	resjson = resjson[:len(resjson)-1]
 	return resjson

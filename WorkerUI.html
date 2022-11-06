@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<!-- Add <html/head/body> -->
 		<script
 		  src="https://code.jquery.com/jquery-3.6.1.js"
 		  integrity="sha256-3zlB5s2uwoUzrXK3BT7AX3FyvojsraNFxCc2vC/7pNI="
@@ -17,7 +16,6 @@
 				color: #fff;
 			}
 		</style>
-		<!-- Add link -->
 		<link rel="icon" href="/favicon.ico?v=2"/>
 	</head>
 	<body>
@@ -41,61 +39,61 @@
 				  <h5 class="modal-title">Apraksts</h5>
 				  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
-				<div class="modal-body"><!-- rem "-->
+				<div class="modal-body">
 
 				  <div id="complectation-form" class="text-center">
 
 					<label for="name"><strong>Pasūtītjs</strong></label><br>
-					<div class="name">Jana Vīgupe</div>
+					<div id="name" class="name">Jana Vīgupe</div>
 
 					<label for="case"><strong>Korpuss</strong></label><br>
-					<div class="case">SilentiumPC Armis AR1, Pure Black, 47.00 €</div>
+					<div id="case" class="case">SilentiumPC Armis AR1, Pure Black, 47.00 €</div>
 
 					<label for="motherboard"><strong>Mātesplate</strong></label><br>
-					<div class="motherboard">MSI B350 PC MATE, 67.00 €</div>
+					<div id="motherboard" class="motherboard">MSI B350 PC MATE, 67.00 €</div>
 
 					<label for="cpu"><strong>Processors</strong></label><br>
-					<div class="cpu">AMD Ryzen 5 3600, 140.00 €</div>
+					<div id="cpu" class="cpu">AMD Ryzen 5 3600, 140.00 €</div>
 
 					<label for="videocard"><strong>Videokarte</strong></label><br>
-					<div class="videocard">NVIDIA GeForce RTX 4090, 2179.00 €</div>
+					<div id="videocard" class="videocard">NVIDIA GeForce RTX 4090, 2179.00 €</div>
 
 					<label for="ram"><strong>RAM</strong></label><br>
-					<div class="ram">G.SKILL RipJaws, 8GB, 3200MHz, 80.00 €</div>
+					<div id="ram" class="ram">G.SKILL RipJaws, 8GB, 3200MHz, 80.00 €</div>
 
 					<label for="memory"><strong>Atmiņa</strong></label><br>
-					<div class="memory">SSD Crucial BX500, 1TB, 200.00 €</div>
+					<div id="memory" class="memory">SSD Crucial BX500, 1TB, 200.00 €</div>
 
 					<label for="tel"><strong>Telefona numurs</strong></label><br>
-					<div class="tel">25 673 038</div>
+					<div id="tel" class="tel">25 673 038</div>
 
 					<label for="deliv"><strong>Piegāde</strong></label><br>
-					<div class="deliv">Uz mājām</div>
+					<div id="deliv" class="deliv">Uz mājām</div>
 
 					<label for="status"><strong>Status</strong></label><br>
-					<div class="status">Pieteikuma apstrāde</div>
+					<div id="status" class="status">Pieteikuma apstrāde</div>
 		  
 				  </div>
 
 				  <div id="purchace-form" class="text-center">
 
 					<label for="name"><strong>Pasūtītjs</strong></label><br>
-					<div class="name">Jana Vīgupe</div>
+					<div id="repair-name" class="name">Jana Vīgupe</div>
 
-					<label for="case"><strong>Detaļas veids</strong></label><br>
-					<div class="case">Videokarte</div>
+					<label for="component-type"><strong>Detaļas veids</strong></label><br>
+					<div id="component-type" class="component-type">Videokarte</div>
 
-					<label for="motherboard"><strong>Modelis</strong></label><br>
-					<div class="motherboard">NVIDIA GeForce RTX 4090, 2179.00 €</div>
+					<label for="model"><strong>Modelis</strong></label><br>
+					<div id="model" class="model">NVIDIA GeForce RTX 4090, 2179.00 €</div>
 
 					<label for="tel"><strong>Telefona numurs</strong></label><br>
-					<div class="tel">25 673 038</div>
+					<div id="repair-tel" class="tel">25 673 038</div>
 
 					<label for="deliv"><strong>Piegāde</strong></label><br>
-					<div class="deliv">Uz mājām</div>
+					<div id="repair-deliv" class="deliv">Uz mājām</div>
 
 					<label for="status"><strong>Status</strong></label><br>
-					<div class="status">Pieteikuma apstrāde</div>
+					<div id="repair-status" class="status">Pieteikuma apstrāde</div>
 		  
 				  </div>
 				</div>
@@ -105,8 +103,6 @@
 			  </div>
 			</div>
 		</div>
-		<!-- rem </form> -->
-		<!-- rem </div> -->
 		<script src="Worker.js" type="text/javascript"></script>
 	</body>
 </html>

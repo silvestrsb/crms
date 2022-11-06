@@ -52,7 +52,7 @@
       redirect: 'follow',
       referrerPolicy: 'no-referrer',
       headers: {'Content-Type': 'application/json'}, 
-      body: JSON.stringify(serializeForm(form))   //TODO: POST only non-empty form fields
+      body: JSON.stringify(serializeForm(form)) 
     })
       .then(console.log(JSON.stringify(serializeForm(form)))) // FormData to JSON
       //.then(res => res.json())
