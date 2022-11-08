@@ -113,12 +113,38 @@
 					
 					<label for="repair-notes"><strong>Piezīmes</strong></label><br>
 					<div id="repair-notes" class="status">Piezīme666</div>
-
-					
 				  </div>
+				  
+				  <div id="update-status-form" class="text-center">
+						<div hidden id="update-status-form-id">
+
+						</div>
+							<input type="radio" id="Denied" name="statusType" value="Denied">
+							<label for="Denied">Noraidīts</label>
+							<input type="radio" id="Received" name="statusType" value="Received">
+							<label for="Received">Saņemts</label>
+							<input type="radio" id="Ready" name="statusType" value="Ready">
+							<label for="Ready">Gatavs saņemšanai</label>
+							<br>
+							<label for="update-comment"><strong>Komentārs</strong></label><br>
+							<input id="update-comment" class="form-control me-2" type="text" placeholder="Komentārs" aria-label="Comment">
+							<br>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="sendStatus()">Nosūtīt</button>
+				  </div>
+
+
+				  <div id="comment-form" class="text-center">
+					<div hidden id="comment-form-mail">
+					</div>
+
+					<input type="text" id="commentbox-msg">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="sendEmail()">Nosūtīt</button>
+				</div>
+
+
 				</div>
 				<div class="modal-footer">
-				  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atpakaļ</button>
+				  <!--button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atpakaļ</button-->
 				</div>
 			  </div>
 			</div>
