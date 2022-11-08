@@ -8,10 +8,6 @@ buildTable(orderArray)
 
 var j = 0;
 
-var sid = "%d"
-
-//get sid from html
-
 function buildTable(data){
     var table = document.getElementById('ordersTable')
 
@@ -52,7 +48,6 @@ document.addEventListener('click', (e) => {
         // Send GetByIndex?id={val} request
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
-        myHeaders.append("Session-Id", sid);
         var raw = JSON.stringify({});
 
         var requestOptions = {
@@ -77,7 +72,6 @@ document.addEventListener('click', (e) => {
                 if (json.reqType=="Complectation") {
                     hideRequestTypeForms();
                     $('complectation-form').style.display = 'block';
-                    //email;notes;date
                     $("name").innerHTML = json.name;
                     $("case").innerHTML = json.case;
                     $("motherboard").innerHTML = json.motherboard;
@@ -88,17 +82,24 @@ document.addEventListener('click', (e) => {
                     $("tel").innerHTML = json.tel; 
                     $("deliv").innerHTML = json.deliv;
                     $("status").innerHTML = json.status;
+
+                    $("email").innerHTML = json.email;
+                    $("notes").innerHTML = json.notes;
+                    $("date").innerHTML = json.date;
                 }
                 else {
                     hideRequestTypeForms();
                     $('purchace-form').style.display = 'block';
-					//email;notes;date
                     $("repair-name").innerHTML = json.name;
                     $("component-type").innerHTML = json.componentType;
                     $("model").innerHTML = json.model;
                     $("repair-tel").innerHTML = json.tel;
                     $("repair-deliv").innerHTML = json.deliv;
                     $("repair-status").innerHTML = json.status;
+
+                    $("repair-email").innerHTML = json.email;
+                    $("repair-notes").innerHTML = json.problem;
+                    $("repair-date").innerHTML = json.date;
                 }
             })
         .catch(error => console.log('error', error));
