@@ -83,6 +83,10 @@ document.addEventListener('click', (e) => {
                     $("tel").innerHTML = json.tel; 
                     $("deliv").innerHTML = json.deliv;
                     $("status").innerHTML = json.status;
+
+                    $("email").innerHTML = json.email;
+                    $("notes").innerHTML = json.notes;
+                    $("date").innerHTML = json.date.substring(0, json.date.indexOf(' '));
                 }
                 else {
                     hideRequestTypeForms();
@@ -94,6 +98,10 @@ document.addEventListener('click', (e) => {
                     $("repair-tel").innerHTML = json.tel;
                     $("repair-deliv").innerHTML = json.deliv;
                     $("repair-status").innerHTML = json.status;
+
+                    $("repair-email").innerHTML = json.email;
+                    $("repair-notes").innerHTML = json.problem;
+                    $("repair-date").innerHTML = json.date.substring(0, json.date.indexOf(' '));
                 }
             })
         .catch(error => console.log('error', error));
