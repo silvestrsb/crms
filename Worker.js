@@ -8,6 +8,10 @@ buildTable(orderArray)
 
 var j = 0;
 
+var sid = "%d"
+
+//get sid from html
+
 function buildTable(data){
     var table = document.getElementById('ordersTable')
 
@@ -48,6 +52,7 @@ document.addEventListener('click', (e) => {
         // Send GetByIndex?id={val} request
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
+        myHeaders.append("Session-Id", sid);
         var raw = JSON.stringify({});
 
         var requestOptions = {
@@ -83,10 +88,6 @@ document.addEventListener('click', (e) => {
                     $("tel").innerHTML = json.tel; 
                     $("deliv").innerHTML = json.deliv;
                     $("status").innerHTML = json.status;
-
-                    $("email").innerHTML = json.email;
-                    $("notes").innerHTML = json.notes;
-                    $("date").innerHTML = json.date.substring(0, json.date.indexOf(' '));
                 }
                 else {
                     hideRequestTypeForms();
@@ -98,10 +99,6 @@ document.addEventListener('click', (e) => {
                     $("repair-tel").innerHTML = json.tel;
                     $("repair-deliv").innerHTML = json.deliv;
                     $("repair-status").innerHTML = json.status;
-
-                    $("repair-email").innerHTML = json.email;
-                    $("repair-notes").innerHTML = json.problem;
-                    $("repair-date").innerHTML = json.date.substring(0, json.date.indexOf(' '));
                 }
             })
         .catch(error => console.log('error', error));
