@@ -8,11 +8,12 @@ buildTable(orderArray)
 
 var j = 0;
 
+var sid = "%d"
+
 function buildTable(data){
     var table = document.getElementById('ordersTable')
 
     console.log(orderArray);
-    //TODO: hardcoded GO template values (current harcoded Id = 5 for all orders) to real db values
     console.log("^ orderArray from GetDBInitInfo, contains each requests Id from DB (currently hardcoded)");
 
     for(i = 0; i < data.length; i++) {
@@ -48,6 +49,7 @@ document.addEventListener('click', (e) => {
         // Send GetByIndex?id={val} request
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
+        myHeaders.append("Session-Id", sid);
         var raw = JSON.stringify({});
 
         var requestOptions = {
