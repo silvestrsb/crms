@@ -40,8 +40,8 @@ var hideRequestTypeForms = function() {
     $('update-status-form').style.display = 'none';
     $('comment-form').style.display = 'none';
 
-  }
-  hideRequestTypeForms();
+}
+hideRequestTypeForms();
 
 var elementId;
 document.addEventListener('click', (e) => {
@@ -133,67 +133,64 @@ document.addEventListener('click', (e) => {
             redirect: 'follow'
           };
 
-        //fetch("http://localhost:8080/email", requestOptions)
-        //.then(result => function(r) {
-        //    $('comment-form-mail').value = r;
-        //})
-         $('comment-form-mail').value = "example@riekstins.com";
+        fetch("http://localhost:8080/email?id="+elementId.substring(7, undefined), requestOptions)
+        .then(result => result.text())
+        .then(val => {
+            $('comment-form-mail').value = val;
+        })
 
     }
 
-    });
+});
 
     
 
-    window.addEventListener('beforeunload', function (e) {
-        var myHeaders = new Headers();
-        //myHeaders.append("Content-Type", "application/json");
-        myHeaders.append("Session-Id", sid);
+window.addEventListener('beforeunload', function (e) {
+	var myHeaders = new Headers();
+	myHeaders.append("Content-Type", "text/plain");
+	myHeaders.append("Session-Id", sid);
 
-        var requestOptions = {
-            method: 'POST',
-            headers: myHeaders,
-            body: raw,
-            redirect: 'follow'
-          };
-
-        fetch("http://localhost:8080/exit", requestOptions)
- 
-
+	var requestOptions = {
+		method: 'POST',
+		headers: myHeaders,
+		body: "",
+		redirect: 'follow'
+	};
+	fetch("http://localhost:8080/exit?sid="+sid, requestOptions)
 });
 
 
 function sendStatus() {
-    var statusMsg = document.getElementsByName('statusType').item(0).value;
-    console.log("statusmsg: " + statusMsg);
+	var statusMsg = document.getElementsByName('statusType').item(0).value;
+	console.log("statusmsg: " + statusMsg);
 
-    var commentMsg = $('update-comment').value;
-    console.log(commentMsg);
-    
-    var id = $('update-status-form-id').value.substring(8, undefined);
-    console.log(id);
+	var commentMsg = $('update-comment').value;
+	console.log(commentMsg);
 
-    //console.log("Send Status clicked: " + elementId);
-    //console.log(elementId.substring(8, undefined));
+	var id = $('update-status-form-id').value.substring(8, undefined);
+	console.log(id);
 
-     var myHeaders = new Headers();
-     myHeaders.append("Content-Type", "application/json");
-     myHeaders.append("Session-Id", sid);
-     
-     var raw = "{\"id\":" + id + ", \"status\": \""+ statusMsg +"\", \"comment\": \""+ commentMsg +"\"}";
+	//console.log("Send Status clicked: " + elementId);
+	//console.log(elementId.substring(8, undefined));
 
-     var requestOptions = {
-       method: 'POST',
-       headers: myHeaders,
-       body: raw,
-       redirect: 'follow'
-     };
-     
-     fetch("http://localhost:8080/setStatus", requestOptions)
-       .then(response => response.text())
-       .then(result => console.log(result))
-       .then(result => console.log(elementId))
-       .catch(error => console.log('error', error));
+	var myHeaders = new Headers();
+	myHeaders.append("Content-Type", "application/json");
+	myHeaders.append("Session-Id", sid);
+
+	var raw = "{\"id\":" + id + ", \"status\": \""+ statusMsg +"\", \"comment\": \""+ commentMsg +"\"}";
+
+	var requestOptions = {
+		method: 'POST',
+		headers: myHeaders,
+		body: raw,
+		redirect: 'follow'
+	};
+
+	fetch("http://localhost:8080/setStatus", requestOptions)
+	.then(response => response.text())
+	.then(result => console.log(result))
+	.then(result => console.log(elementId))
+	.catch(error => console.log('error', error));
 } 
 
 function sendEmail() {
@@ -221,5 +218,5 @@ function sendEmail() {
 }
 
 function Exit() {
-    location.reload();
+	location.reload();
 }

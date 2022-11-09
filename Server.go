@@ -53,6 +53,8 @@ var StatReqChan chan StatusChange
 var StatResChan chan string
 var UserReqChan chan UserData
 var UserResChan chan *sql.Rows
+var EmailReqChan chan int
+var EmailResChan chan *sql.Rows
 var SettingsV Settings
 var fd int
 var done chan bool
@@ -131,12 +133,12 @@ type (
 		id int
 		T string
 	}
-	StatusChange struct {//TODO: change field names
+	StatusChange struct {
 		ID int `json:"id"`
 		NewStatus string `json:"status"`
 		Comment string `json:"comment"`
 	}
-	MsgInfo struct {//TODO: change field names
+	MsgInfo struct {
 		To string `json:"email"`
 		Body string `json:"msg"`
 	}
@@ -342,6 +344,8 @@ func main() {
 		StatResChan = make(chan string, 1)
 		UserReqChan = make(chan UserData, 1)
 		UserResChan = make(chan *sql.Rows, 1)
+		EmailReqChan = make(chan int, 1)
+		EmailResChan = make(chan *sql.Rows, 1)
 		
 		go RequestProcesser(db)
 		go RequestGetter(db)
@@ -464,7 +468,6 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 				if !ok {
 					io.WriteString(w, loginhtml)
 				} else {
-					//modify html to store sid
 					if SIDIsAdmin(sid) {
 						toSend := fmt.Sprintf(WUI, sid)
 						io.WriteString(w, toSend)//TODO: change to adm.html
@@ -492,7 +495,7 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 			case "/GetByIndex":
 				ok, _:=checkSession(r)
 				if !ok {
-					io.WriteString(w, "you need to login")//TODO: discuss
+					io.WriteString(w, "you need to login")
 				} else {
 					id, _ :=strconv.Atoi(r.URL.Query()["id"][0])
 					res := GetDBInfoByID(id)
@@ -500,6 +503,15 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			case "/login.js":
 				io.WriteString(w, loginjs)
+			case "/email":
+				ok, _:=checkSession(r)
+				if !ok {
+					io.WriteString(w, "you need to login")
+				} else {
+					id, _ :=strconv.Atoi(r.URL.Query()["id"][0])
+					res := GetEmailByID(id)
+					io.WriteString(w, res)
+				}
 			default:
 				w.WriteHeader(405)
 		}
@@ -553,7 +565,7 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 					io.WriteString(w, fmt.Sprint(sid))
 				}
 			case "/exit":
-				ok, sid:=checkSession(r)
+				ok, sid:=checkSession2(r)
 				if ok {
 					DeleteSession(sid)
 				}
@@ -704,10 +716,42 @@ func RequestGetter(db *sql.DB) {
 				} else {
 					UserResChan <- r
 				}
+			case id:=<-EmailReqChan:
+				r, err := db.Query("SELECT Email FROM requests WHERE id=%d",id)
+				if err != nil {
+					fmt.Println(err)
+					fmt.Println("Server:\\>")
+					EmailResChan <- nil
+				} else {
+					EmailResChan <- r
+				}
 			default:
 		}
 	}
 	done <- true
+}
+
+func GetEmailByID(id int) string {
+	var res string
+	if SettingsV.Server.dbconnect {
+		EmailReqChan <- id
+		resRows := <- EmailResChan
+		resRows.Next()
+		resRows.Scan(&res)
+	} else {
+		switch id {
+			case 0:res="Example1@gmail.com"
+			case 1:res="Example2@gmail.com"
+			case 3:res="Example4@gmail.com"
+			case 2:res="Example3@gmail.com"
+			case 4:res="Example5@gmail.com"
+			case 5:res="Example6@gmail.com"
+			case 6:res="Devil@gmail.com"
+			case 7:res="Devil@gmail.com"
+			default:res="Error@Error.404"
+		}
+	}
+	return res
 }
 
 func GetDBInfoByID(id int) string {
@@ -764,7 +808,7 @@ func GetDBInfoByID(id int) string {
 			case 5:res=fmt.Sprintf(templateComp,"FName6","LName6","Example6@gmail.com","Complectation","case3","mother3","cpu3","gpu3","ram3","mem3","+371 55555555","Veikalā","waiting","Some description 3",date)
 			case 6:res=fmt.Sprintf(templateRep,"Aigars","Riekstiņš","Devil@gmail.com","Repair","compType","Model","+666666","Class No9","pending","","2020-09-01")
 			case 7:res=fmt.Sprintf(templateComp,"Aigars","Riekstiņš","Devil@gmail.com","Complectation","CaseName","MoboName","cpuName","gpuName","ramName","memoryName","+666666","Veikalā","pending","","2020-09-01")
-			default:res=fmt.Sprintf(templateRep,"Error","Error","Error","Error","Error","Error","Error","Error","Error","Error","Error")
+			default:res=fmt.Sprintf(templateRep,"Error","Error","Error@Error.404","Repair","Error","Error","+Error","Error street","error","Error!","Error-Error-Error")
 		}
 	}
 	return res
