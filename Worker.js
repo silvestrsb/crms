@@ -38,6 +38,8 @@ var hideRequestTypeForms = function() {
     $('complectation-form').style.display = 'none';
     $('purchace-form').style.display = 'none';
     $('update-status-form').style.display = 'none';
+    $('comment-form').style.display = 'none';
+
   }
   hideRequestTypeForms();
 
@@ -216,4 +218,8 @@ function sendEmail() {
       .then(result => console.log(result))
       .then(result => console.log(elementId))
       .catch(error => console.log('error', error));
+}
+
+function Exit() {
+    location.reload();
 }
