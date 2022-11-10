@@ -20,13 +20,13 @@ function buildTable(data){
         var row = `<tr>
                 <td>${data[i].Piepr}</td>
                 <td> 
-                    <a data-bs-toggle="modal" data-bs-target="#modal-assembly" href="#" id=${data[i].Id}>${data[i].Darb1}</a>
+                    <a class="link-light" data-bs-toggle="modal" data-bs-target="#modal-assembly" href="#" id=${data[i].Id}>${data[i].Darb1}</a>
                 </td>
                 <td>
-                <a data-bs-toggle="modal" data-bs-target="#modal-assembly" href="#" id=emailId${data[i].Id}>${data[i].Darb2}</a>
+                <a class="link-light" data-bs-toggle="modal" data-bs-target="#modal-assembly" href="#" id=emailId${data[i].Id}>${data[i].Darb2}</a>
                 </td>
                 <td>
-                    <a data-bs-toggle="modal" data-bs-target="#modal-assembly" href="#" id=updateId${data[i].Id}>${data[i].Darb3}</a>
+                    <a class="link-light" data-bs-toggle="modal" data-bs-target="#modal-assembly" href="#" id=updateId${data[i].Id}>${data[i].Darb3}</a>
                 </td>
             </tr>`
         j++;
@@ -46,7 +46,7 @@ hideRequestTypeForms();
 var elementId;
 document.addEventListener('click', (e) => {
      elementId = e.target.id;
-     console.log(elementId);
+     //console.log(elementId);
 
     // Retrieve id from clicked element - See Details - GetByIndex
     if (!isNaN(elementId) && elementId.length > 0) {

@@ -44,7 +44,7 @@
       return obj;
     };
 
-    fetch('http://localhost:8080/"', { 
+    fetch('http://localhost:8080/', { 
       method: 'POST',
       mode: 'cors',
       cache: 'no-cache',
@@ -56,6 +56,6 @@
     })
       .then(console.log(JSON.stringify(serializeForm(form)))) // FormData to JSON
       //.then(res => res.json())
-      //.then(res => console.log(res)) // API response with received json
+      .then(res => console.log(res)) // API response log
     })
 
