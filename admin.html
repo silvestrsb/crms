@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script
+		  src="https://code.jquery.com/jquery-3.6.1.js"
+		  integrity="sha256-3zlB5s2uwoUzrXK3BT7AX3FyvojsraNFxCc2vC/7pNI="
+		  crossorigin="anonymous"></script>
+		<link rel="stylesheet" 
+		href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" 
+		integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" 
+		crossorigin="anonymous">
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+		<script  src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
+		<style>
+			th{
+				color: #fff;
+			}
+			body {
+				font-family: sans-serif;
+			}
+			a {
+				text-decoration: none;
+			}
+			input:focus{
+				outline: none;
+			}
+		</style>
+		<!--link rel="icon" href="/favicon.ico?v=2"/-->
+	</head>
+	<body style="background-color: #dbdbd8">
+		<table class="table table-striped table-dark">
+			<tr class="bg-info">
+				<th>Pieprasījuma informācija</th>
+				<th>Darbība Nr. 1</th>
+				<th>Darbība Nr. 2</th>
+				<th>Darbība Nr. 3</th>
+			</tr>
+
+			<tbody id="ordersTable">
+
+			</tbody>
+		</table>
+
+		<div class="modal" id="modal-assembly" tabindex="-1">
+			<div class="modal-dialog modal-dialog-centered">
+			  <div class="modal-content">
+				<div class="modal-header">
+				  <h5 class="modal-title">Apraksts</h5>
+				  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+
+				  <div id="complectation-form" class="text-center">
+
+					<label for="name"><strong>Pasūtītjs</strong></label><br>
+					<div id="name" class="name">Jana Vīgupe</div>
+
+					<label for="email"><strong>E-pasts</strong></label><br>
+					<div id="email" class="status">E-pasts</div>
+
+					<label for="date"><strong>Datums</strong></label><br>
+					<div id="date" class="status">Datums</div>
+
+					<label for="case"><strong>Korpuss</strong></label><br>
+					<div id="case" class="case">SilentiumPC Armis AR1, Pure Black, 47.00 €</div>
+
+					<label for="motherboard"><strong>Mātesplate</strong></label><br>
+					<div id="motherboard" class="motherboard">MSI B350 PC MATE, 67.00 €</div>
+
+					<label for="cpu"><strong>Processors</strong></label><br>
+					<div id="cpu" class="cpu">AMD Ryzen 5 3600, 140.00 €</div>
+
+					<label for="videocard"><strong>Videokarte</strong></label><br>
+					<div id="videocard" class="videocard">NVIDIA GeForce RTX 4090, 2179.00 €</div>
+
+					<label for="ram"><strong>RAM</strong></label><br>
+					<div id="ram" class="ram">G.SKILL RipJaws, 8GB, 3200MHz, 80.00 €</div>
+
+					<label for="memory"><strong>Atmiņa</strong></label><br>
+					<div id="memory" class="memory">SSD Crucial BX500, 1TB, 200.00 €</div>
+
+					<label for="tel"><strong>Telefona numurs</strong></label><br>
+					<div id="tel" class="tel">25 673 038</div>
+
+					<label for="deliv"><strong>Piegāde</strong></label><br>
+					<div id="deliv" class="deliv">Uz mājām</div>
+
+					<label for="status"><strong>Status</strong></label><br>
+					<div id="status" class="status">Pieteikuma apstrāde</div>
+
+					<label for="notes"><strong>Piezīmes</strong></label><br>
+					<div id="notes" class="status">Piezīme666</div>
+
+					
+				  </div>
+
+				  <div id="purchace-form" class="text-center">
+
+					<label for="name"><strong>Pasūtītjs</strong></label><br>
+					<div id="repair-name" class="name">Jana Vīgupe</div>
+
+					<label for="repair-email"><strong>E-pasts</strong></label><br>
+					<div id="repair-email" class="status">E-pasts</div>
+
+					<label for="repair-date"><strong>Datums</strong></label><br>
+					<div id="repair-date" class="status">Datums</div>
+
+					<label for="component-type"><strong>Detaļas veids</strong></label><br>
+					<div id="component-type" class="component-type">Videokarte</div>
+
+					<label for="model"><strong>Modelis</strong></label><br>
+					<div id="model" class="model">NVIDIA GeForce RTX 4090, 2179.00 €</div>
+
+					<label for="tel"><strong>Telefona numurs</strong></label><br>
+					<div id="repair-tel" class="tel">25 673 038</div>
+
+					<label for="deliv"><strong>Piegāde</strong></label><br>
+					<div id="repair-deliv" class="deliv">Uz mājām</div>
+
+					<label for="status"><strong>Status</strong></label><br>
+					<div id="repair-status" class="status">Pieteikuma apstrāde</div>
+					
+					<label for="repair-notes"><strong>Piezīmes</strong></label><br>
+					<div id="repair-notes" class="status">Piezīme666</div>
+				  </div>
+				  
+				  <div id="update-status-form" class="text-center">
+						<div hidden id="update-status-form-id">
+
+						</div>
+							<input type="radio" id="Denied" name="statusType" value="Denied">
+							<label for="Denied">Noraidīts</label>
+							<input type="radio" id="Received" name="statusType" value="Received">
+							<label for="Received">Saņemts</label>
+							<input type="radio" id="Ready" name="statusType" value="Ready">
+							<label for="Ready">Gatavs saņemšanai</label>
+							<br>
+							<label for="update-comment"><strong>Komentārs</strong></label><br>
+							<input id="update-comment" class="form-control me-2" type="text" placeholder="Komentārs" aria-label="Comment">
+							<br>
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="sendStatus()">Nosūtīt</button>
+				  </div>
+
+
+				  <div id="comment-form" class="text-center">
+					<div hidden id="comment-form-mail">
+					</div>
+
+					<input type="text" id="commentbox-msg">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="sendEmail()">Nosūtīt</button>
+					</div>
+				</div>
+
+
+				</div>
+				<div class="modal-footer">
+				  <!--button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Atpakaļ</button-->
+				</div>
+			  </div>
+			</div>
+		</div>
+
+		<button type="button" class="btn btn-dark" style="margin-left: 5px;" data-bs-dismiss="modal" onclick="Exit()">Iziet</button>
+
+        <div id="admin-buttons" style="text-align:right">
+        <button type="button" class="btn btn-dark" style="text-align: right;" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#serverModal">Server</button>
+        <button type="button" class="btn btn-dark" style="text-align: right;" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#databaseModal">Datubāze</button>
+        </div>
+
+
+  
+  <!-- Modal - Server -->
+  <div class="modal fade" id="serverModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-xl">
+	  <div style="background-color: black; color:white" class="modal-content">
+		<div class="modal-header">
+		  <h5 class="modal-title" id="exampleModalLabel">Server</h5>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		<div style="max-height: 250px; overflow-y: auto;" class="modal-body">
+			<label for="cmd">Server:\> </label>
+			<input style="background-color: black; border: 0px solid; color:white;" type="text" 
+			onkeydown = "if (event.keyCode == 13) Server(); 
+						 if (event.keyCode == 13) cmd.value='';"  
+			id="cmd" name="cmd"><br>
+			
+			<div id="server-response-text">Text</div>
+
+		  <br><br><br><br><br><br><br><br>
+		</div>
+		<div class="modal-footer">
+		  <!--button type="button" class="btn btn-dark" data-bs-dismiss="modal">Close</button>
+		  <button type="button" class="btn btn-dark">Save changes</button-->
+		</div>
+	  </div>
+	</div>
+  </div>
+
+
+  <!-- Modal - Database -->
+  <div class="modal fade" id="databaseModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-xl">
+	  <div style="background-color: black; color:white" class="modal-content">
+		<div class="modal-header">
+		  <h5 class="modal-title" id="exampleModalLabel">Database</h5>
+		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		<div class="modal-body">
+		  ...
+		  <br><br><br><br><br><br><br><br>
+		</div>
+		<div class="modal-footer">
+		  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+		  <button type="button" class="btn btn-primary">Save changes</button>
+		</div>
+	  </div>
+	</div>
+  </div>
+
+
+		<!-- script src="Worker.js?sid=%d" type="text/javascript"></script-->
+        <script src="admin.js?sid=%d" type="text/javascript"></script>
+	</body>
+</html>

@@ -41,13 +41,20 @@
 		<div> 
 			<script src="login.js"></script>
 			
-			<input type="text" id="login" name="login" placeholder="Login"><br><br>
+			<input type="text" id="login" 
+					onkeydown = "if (event.keyCode == 13) document.getElementById('login-btn').click()"  
+					name="login"
+					placeholder="Login">
+			<br><br>
 			
-			<input type="password" id="password" name="password" placeholder="Password"><br><br>
+			<input type="password" id="password" 
+					onkeydown = "if (event.keyCode == 13) document.getElementById('login-btn').click()"  
+					name="password" placeholder="Password">
+			<br><br>
 			
 			<div id="auth"></div>
 			
-			<button type="button" class="btn btn-dark" onclick="Login()">Pierakstīties</button><br><br>
+			<button type="button" id="login-btn" class="btn btn-dark" onclick="Login()">Pierakstīties</button><br><br>
 		</div>
 	</body>
 </html>
