@@ -18,6 +18,7 @@ function buildTable(data){
 
     for(i = 0; i < data.length; i++) {
         var row = `<tr>
+                <td style="text-align:center;">${data[i].Id}</td>
                 <td>${data[i].Piepr}</td>
                 <td> 
                     <a class="link-light" data-bs-toggle="modal" data-bs-target="#modal-assembly" href="#" id=${data[i].Id}>${data[i].Darb1}</a>
