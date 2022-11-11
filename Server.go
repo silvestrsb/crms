@@ -40,6 +40,12 @@ var loginhtml string
 //go:embed login.js
 var loginjs string
 
+//go:embed admin.html
+var admhtml string
+
+//go:embed admin.js
+var admjs string
+
 var isRunning bool
 var queue chan request
 var mutex chan bool
@@ -55,9 +61,11 @@ var UserReqChan chan UserData
 var UserResChan chan *sql.Rows
 var EmailReqChan chan int
 var EmailResChan chan *sql.Rows
+var QReqChan chan string
+var QResChan chan RowErr
 var SettingsV Settings
 var fd int
-var done chan bool
+var done chan bool = make(chan bool, 4)
 var restart bool
 var sep string
 var auth smtp.Auth
@@ -66,6 +74,13 @@ var UserDB []UserData
 var SessionMutex chan bool = make(chan bool, 1)
 var SessionDB []Session
 var SessID = 1
+
+var consoleIn chan string = make(chan string, 1)
+var consoleOut chan string = make(chan string, 1)
+var adminFormIn chan string = make(chan string, 1)
+var adminFormOut chan string = make(chan string, 1)
+var AdmReqChan chan string = make(chan string, 1)
+var AdmResChan chan string = make(chan string, 1)
 
 type (
 	rType struct {
@@ -135,6 +150,7 @@ type (
 	}
 	StatusChange struct {
 		ID int `json:"id"`
+		ByWhom int
 		NewStatus string `json:"status"`
 		Comment string `json:"comment"`
 	}
@@ -151,8 +167,12 @@ type (
 		expirationDate time.Time
 	}
 	UserData struct {
-		Login string    `json:"login"`
+		Login string `json:"login"`
 		Password string `json:"password"`
+	}
+	RowErr struct {
+		r *sql.Rows
+		err error
 	}
 )
 
@@ -238,13 +258,21 @@ func SIDIsAdmin(id int) bool {
 }
 
 func (r requestRepair) AddToDB(db *sql.DB) {
-	db.Exec("INSERT INTO Repairs values(NULL, '"+r.PType+"', '"+r.Model+"', '"+r.Problem+"')")
-	db.Exec("INSERT INTO Requests values(NULL, '"+r.FName+"', '"+r.LName+"', '"+r.Email+"', '"+r.Phone+"', '"+r.RType+"', '"+r.DAdress+"', LAST_INSERT_ID(), NULL, 'pending', '', '"+fmt.Sprint(time.Now())[:10]+"')")
+	db.Exec("INSERT INTO Repairs VALUES (NULL, '"+r.PType+"', '"+r.Model+"', '"+r.Problem+"')")
+	date:=fmt.Sprint(time.Now())[:10]
+	db.Exec("INSERT INTO Requests VALUES (NULL, '"+r.FName+"', '"+r.LName+"', '"+r.Email+"', '"+r.Phone+"', '"+r.RType+"', '"+r.DAdress+"', LAST_INSERT_ID(), -1, 'pending', '', '"+date+"')")
+	templ:=`name: %s %s, email: %s, phoneNum: %s, deliveryType: %s, adress: %s, date: %s, componentType: %s, model: %s, problemDescription: %s`
+	q:=fmt.Sprintf("INSERT INTO Audit VALUES (NULL,0,'Client make new repair request with data: "+templ+"')",r.FName,r.LName,r.Email,r.Phone,r.RType,r.DAdress,date,r.PType,r.Model,r.Problem)
+	db.Exec(q)
 }
 
 func (r requestAssembly) AddToDB(db *sql.DB) {
-	db.Exec("INSERT INTO Complectations values(NULL, '"+r.Case+"', '"+r.Motherboard+"', '"+r.CPU+"', '"+r.GPU+"', '"+r.RAM+"', '"+r.Storage+"', '"+r.Notes+"')")
-	db.Exec("INSERT INTO Requests values(NULL, '"+r.FName+"', '"+r.LName+"', '"+r.Email+"', '"+r.Phone+"', '"+r.RType+"', '"+r.DAdress+"', NULL, LAST_INSERT_ID(), 'pending', '', '"+fmt.Sprint(time.Now())[:10]+"')")
+	db.Exec("INSERT INTO Complectations VALUES (NULL, '"+r.Case+"', '"+r.Motherboard+"', '"+r.CPU+"', '"+r.GPU+"', '"+r.RAM+"', '"+r.Storage+"', '"+r.Notes+"')")
+	date:=fmt.Sprint(time.Now())[:10]
+	db.Exec("INSERT INTO Requests VALUES (NULL, '"+r.FName+"', '"+r.LName+"', '"+r.Email+"', '"+r.Phone+"', '"+r.RType+"', '"+r.DAdress+"', -1, LAST_INSERT_ID(), 'pending', '', '"+date+"')")
+	templ:=`name: %s %s, email: %s, phoneNum: %s, deliveryType: %s, adress: %s, date: %s, case: %s, motherboard: %s, cpu: %s, videocard: %s, ram: %s, memory: %s, notes: %s`
+	q:=fmt.Sprintf("INSERT INTO Audit VALUES (NULL,0,'Client make new complectation request with data: "+templ+"')",r.FName,r.LName,r.Email,r.Phone,r.RType,r.DAdress,date,r.Case,r.Motherboard,r.CPU,r.GPU,r.RAM,r.Storage,r.Notes)
+	db.Exec(q)
 }
 
 func SendToQueue[T request](r T) {
@@ -323,7 +351,6 @@ func main() {
 		} 
 	}()
 	isRunning = true
-	done = make(chan bool, 3)
 	if SettingsV.Server.dbconnect {
 		r:=fmt.Sprintf("%s:%s@%s(%s)/%s",SettingsV.DB.username,SettingsV.DB.password,SettingsV.DB.protocol,SettingsV.DB.address,SettingsV.DB.dbname)
 		db, err := sql.Open("mysql", r)
@@ -346,6 +373,8 @@ func main() {
 		UserResChan = make(chan *sql.Rows, 1)
 		EmailReqChan = make(chan int, 1)
 		EmailResChan = make(chan *sql.Rows, 1)
+		QReqChan = make(chan string, 1)
+		QResChan = make(chan RowErr, 1)
 		
 		go RequestProcesser(db)
 		go RequestGetter(db)
@@ -358,67 +387,123 @@ func main() {
 	go func() {
 		server.ListenAndServe()
 	}()
+	
+	go consoleScanner()
+	go ADMScanner()
 	fmt.Println("Server is running.")
 	time.Sleep(1*time.Second)
+	consoleOut<-""
 	for isRunning {
-		var cmd string
-		fmt.Print("Server:\\>")
-		fmt.Scan(&cmd)
+		var fullcmd string
+		var out chan string
+		select {
+			case fullcmd=<-consoleIn:
+				out = consoleOut
+			case fullcmd=<-adminFormIn:
+				out = adminFormOut
+		}
+		
+		cmdarr:=strings.Split(fullcmd, " ")
+		if len(cmdarr)<=0 {
+			out<-"Empty command!"
+			continue
+		}
+		cmd:=cmdarr[0]
 		
 		switch strings.ToLower(cmd) {
 			case "stop":
-				fmt.Println("Server shutdown.")
-				server.Shutdown(context.Background())
 				isRunning = false
 				restart = false
+				out<-"Server shutdown."
+				time.Sleep(1*time.Second)
+				server.Shutdown(context.Background())
 			case "restart":
 				if strings.Contains(runtime.GOOS,"windows"){
-					fmt.Println("Server shutdown.")
+					out<-"Server shutdown."
+					time.Sleep(1*time.Second)
 					server.Shutdown(context.Background())
 					isRunning = false
 					restart = true
 				} else {
-					fmt.Println("This command is not supported by your os.")
+					out<-"This command is not supported by Your os."
 				}
 				
-			case "upload":		
-				stdin := bufio.NewReader(os.Stdin)
-				stdin.ReadString('\n')
-				fmt.Print("Insert path to source file: ")
-				path, err := stdin.ReadString('\n')
-				path = strings.TrimSpace(path)
-				if err != nil {
-					fmt.Println(err)
+			case "upload":
+				if len(cmdarr)<=2 {
+					out<-"Not enough arguments."
 					continue
 				}
-				fmt.Print("Insert destination folder name ('root' to upload into Server root): ")
-				location, err := stdin.ReadString('\n')
-				location = strings.TrimSpace(location)
-				if err != nil {
-					fmt.Println(err)
+				var location string
+				var path string
+				var i int = 1
+				if strings.HasPrefix(cmdarr[i], `"`) {
+					for {
+						if i >= len(cmdarr) {
+							break
+						}
+						if strings.HasSuffix(cmdarr[i], `"`) {
+							break
+						}
+						
+						i++
+					}
+					if i >= len(cmdarr) {
+						out<-"Error in arguments."
+						continue
+					}
+					location = strings.Join(cmdarr[1:i+1], " ")
+					location = location[1:len(location)-1]
+					i++
+				} else {
+					location = cmdarr[i]
+					i++
+				}
+				if i >= len(cmdarr) {
+					out<-"Not enough arguments."
 					continue
 				}
-				location = strings.ToLower(location)
-				if location == "root" {
+				oldi:=i
+				if strings.HasPrefix(cmdarr[i], `"`) {
+					for {
+						if i >= len(cmdarr) {
+							break
+						}
+						if strings.HasSuffix(cmdarr[i], `"`) {
+							break
+						}
+						i++
+					}
+					if i >= len(cmdarr) {
+						out<-"Error in arguments."
+						continue
+					}
+					path = strings.Join(cmdarr[oldi:i+1], " ")
+					path = path[1:len(path)-1]
+				} else {
+					path = cmdarr[i]
+				}
+				if strings.ToLower(location) == "root" {
 					location = ""
 				}
 				src, err := os.Open(path)
 				if err != nil {
-					fmt.Println(err)
+					out<-fmt.Sprint(err)
 					continue
 				}
 				
-				err = os.MkdirAll(location, 0750)
-				if err != nil {
-					fmt.Println(err)
-					src.Close()
-					continue
+				if len(location) != 0 {
+					err = os.MkdirAll(location, 0750)
+					if err != nil {
+						out<-fmt.Sprint(err)
+						src.Close()
+						continue
+					}
 				}
 				
 				stat, _ := src.Stat()
 				dst, err := os.Create(root+sep+location+sep+stat.Name())
 				if err != nil {
-					fmt.Println(err)
+					out<-fmt.Sprint(err)
 					src.Close()
 					continue
 				}
@@ -431,15 +516,18 @@ func main() {
 				dstW.Flush()
 				dst.Close()
 				src.Close()
+				out <- "Command is complete!"
 			default:
-				fmt.Println("Unknown command :", cmd)
+				out<-"Unknown command: " + cmd
 		}
 	}
+	time.Sleep(1*time.Second)
 	fmt.Println("Server will stop soon.")
 	if SettingsV.Server.dbconnect {
 		<-done
 		<-done
 	}
+	<-done
 	<-done
 	fmt.Println("Server is stopped.")
 }
@@ -457,7 +545,23 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("content-type", "application/javascript")
 				io.WriteString(w, script)
 			case "/favicon.ico":
-				v:=r.URL.Query()["v"][0]
+				varr:=r.URL.Query()["v"]
+				var v string
+				if len(varr) <= 0 {
+					var toScan struct {
+						V int `json:"v"`
+					}
+					body, err := io.ReadAll(r.Body)
+					if err != nil {
+						w.WriteHeader(405)
+						fmt.Println(err)
+					}
+					r.Body.Close()
+					json.Unmarshal(body, &toScan)
+					v=strconv.Itoa(toScan.V)
+				} else {
+					v=varr[0]
+				}
 				switch v {
 					case "1":http.ServeFile(w, r, "pictures/favicon.ico")
 					case "2":http.ServeFile(w, r, "pictures/faviconwork.ico")
@@ -469,8 +573,8 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 					io.WriteString(w, loginhtml)
 				} else {
 					if SIDIsAdmin(sid) {
-						toSend := fmt.Sprintf(WUI, sid)
-						io.WriteString(w, toSend)//TODO: change to adm.html
+						toSend := fmt.Sprintf(admhtml, sid, sid)
+						io.WriteString(w, toSend)
 					} else {
 						toSend := fmt.Sprintf(WUI, sid)
 						io.WriteString(w, toSend)
@@ -479,25 +583,48 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 			case "/Worker.js":
 				ok, sid:=checkSession2(r)
 				if !ok {
-					io.WriteString(w, "you need to login")
+					io.WriteString(w, "You need to login.")
 				} else {
 					w.Header().Set("content-type", "application/javascript")
 					jsoninfo := GetDBInitInfo()
+					res := fmt.Sprintf(WUIscript, jsoninfo, sid)
+					io.WriteString(w, res)
+				}
+			case "/admin.js":
+				ok, sid:=checkSession2(r)
+				if !ok {
+					io.WriteString(w, "You need to login.")
+				} else {
+					w.Header().Set("content-type", "application/javascript")
 					if SIDIsAdmin(sid) {
-						res := fmt.Sprintf(WUIscript, jsoninfo, sid)//TODO: change to adm.js
+						res := fmt.Sprintf(admjs, sid)
 						io.WriteString(w, res)
 					} else {
-						res := fmt.Sprintf(WUIscript, jsoninfo, sid)
-						io.WriteString(w, res)
+						io.WriteString(w, "You are not admin.")
 					}
-					
 				}
 			case "/GetByIndex":
 				ok, _:=checkSession(r)
 				if !ok {
-					io.WriteString(w, "you need to login")
+					io.WriteString(w, "You need to login.")
 				} else {
-					id, _ :=strconv.Atoi(r.URL.Query()["id"][0])
+					var id int
+					ids :=r.URL.Query()["id"]
+					if len(ids) <= 0 {
+						var toScan struct {
+							ID int `json:"id"`
+						}
+						body, err := io.ReadAll(r.Body)
+						if err != nil {
+							w.WriteHeader(405)
+							fmt.Println(err)
+						}
+						r.Body.Close()
+						json.Unmarshal(body, &toScan)
+						id=toScan.ID
+					} else {
+						id, _=strconv.Atoi(ids[0])
+					}
 					res := GetDBInfoByID(id)
 					io.WriteString(w, res)
 				}
@@ -506,9 +633,26 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 			case "/email":
 				ok, _:=checkSession(r)
 				if !ok {
-					io.WriteString(w, "you need to login")
+					io.WriteString(w, "You need to login.")
 				} else {
-					id, _ :=strconv.Atoi(r.URL.Query()["id"][0])
+					var id int
+					ids :=r.URL.Query()["id"]
+					if len(ids) <= 0 {
+						var toScan struct {
+							ID int `json:"id"`
+						}
+						body, err := io.ReadAll(r.Body)
+						if err != nil {
+							w.WriteHeader(405)
+							fmt.Println(err)
+						}
+						r.Body.Close()
+						json.Unmarshal(body, &toScan)
+						id=toScan.ID
+					} else {
+						id, _=strconv.Atoi(ids[0])
+					}
+					
 					res := GetEmailByID(id)
 					io.WriteString(w, res)
 				}
@@ -556,7 +700,10 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				var v UserData
 				json.Unmarshal(data, &v)
-				
+				if v.Login=="" {
+					io.WriteString(w, "unknown")
+					return
+				}
 				ok,uid,adm := checkUser(v)
 				if !ok {
 					io.WriteString(w, "unknown")
@@ -570,9 +717,9 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 					DeleteSession(sid)
 				}
 			case "/setStatus":
-				ok, _:=checkSession(r)
+				ok, sid:=checkSession(r)
 				if !ok {
-					io.WriteString(w, "error")
+					io.WriteString(w, "You need to login.")
 				} else {
 					body, err := io.ReadAll(r.Body)
 					if err != nil {
@@ -583,6 +730,7 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 					r.Body.Close()
 					var stat StatusChange
 					json.Unmarshal(body, &stat)
+					stat.ByWhom = GetUID(sid)
 					if SettingsV.Server.dbconnect {
 						StatReqChan <- stat
 						io.WriteString(w, <-StatResChan)
@@ -595,7 +743,7 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 			case "/sendMsg":
 				ok, _:=checkSession(r)
 				if !ok {
-					io.WriteString(w, "error")
+					io.WriteString(w, "You need to login.")
 				} else {
 					body, err := io.ReadAll(r.Body)
 					if err != nil {
@@ -624,17 +772,104 @@ func MainHandler(w http.ResponseWriter, r *http.Request) {
 						fmt.Print("Server:\\>")
 					}
 				}
+			case "/consoleCMD":
+				ok, sid:=checkSession(r)
+				if !ok {
+					io.WriteString(w, "You need to login.")
+				} else {
+					if !SIDIsAdmin(sid) {
+						io.WriteString(w, "You are not admin.")
+					} else {
+						cmd, err := io.ReadAll(r.Body)
+						if err != nil {
+							io.WriteString(w, fmt.Sprint(err))
+							return
+						}
+						r.Body.Close()
+						AdmReqChan<-string(cmd)
+						res:=<-AdmResChan
+						io.WriteString(w, res)
+					}
+				}
+			case "/DBquery":
+				ok, sid:=checkSession(r)
+				if !ok {
+					io.WriteString(w, "You need to login.")
+				} else {
+					if !SIDIsAdmin(sid) {
+						io.WriteString(w, "You are not admin.")
+					} else {
+						if !SettingsV.Server.dbconnect {
+							io.WriteString(w, "DB is not connected.")
+							return
+						}
+						sql, err := io.ReadAll(r.Body)
+						if err != nil {
+							io.WriteString(w, fmt.Sprint(err))
+							return
+						}
+						r.Body.Close()
+						res:=ProcessSQL(string(sql))
+						io.WriteString(w, res)
+					}
+				}
 		}
 	} else {
 		w.WriteHeader(405)
 	}
 }
 
+func GetUID(SID int) int {
+	for _, s := range SessionDB {
+		if s.ID == SID {
+			return s.userID
+		}
+	}
+	return -1
+}
+
+func consoleScanner() {
+	<-consoleOut
+	stdin:=bufio.NewReader(os.Stdin)
+	stdin.Discard(stdin.Buffered())
+	for isRunning {
+		fmt.Print("Server:\\>")
+		str, err := stdin.ReadString('\n')
+		if !isRunning {break}
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		str = strings.TrimSpace(str)
+		consoleIn<-str
+		res:=<-consoleOut
+		fmt.Println(res)
+		if !isRunning {break}
+	}
+}
+
+func ADMScanner() {
+	for isRunning {
+		select {
+			case str:=<-AdmReqChan:
+				str = strings.TrimSpace(str)
+				adminFormIn<-str
+				res:=<-adminFormOut
+				AdmResChan<-res
+			default:
+		}
+	}
+	done<-true
+}
+
 func (stat StatusChange) SetStatus(db *sql.DB) string {
-	_, err := db.Exec("")
+	q:=fmt.Sprintf("UPDATE requests SET Status = '%s', LastComment = '%s' WHERE id = %d;", stat.NewStatus, stat.Comment, stat.ID)
+	_, err := db.Exec(q)
 	if err != nil {
 		return "error"
 	} else {
+		q=fmt.Sprintf("INSERT INTO audit (WorkerID, Description) VALUES (%d, 'Has updated status of client with id=%d to %s with comment \"%s\"')", stat.ByWhom,stat.ID, stat.NewStatus, stat.Comment)
+		db.Exec(q)
 		return "success"
 	}
 }
@@ -667,13 +902,12 @@ func RequestProcesser(db *sql.DB) {
 	done <- true
 }
 
-//TODO: try SELECT CASE ... view.* ...
 func RequestGetter(db *sql.DB) {
 	for len(UserReqChan)!=0 || len(InitReqChan)!=0 || len(IDTReqChan)!=0 || len(IDReqChan)!=0 || isRunning {
 		time.Sleep(10*time.Nanosecond)
 		select {
 			case <-InitReqChan:
-				r, err := db.Query("SELECT ID, FName, LName, Date, CASE WHEN RepairID IS NULL THEN 'Complectation' ELSE 'Repair' END AS REQUEST_TYPE FROM requests WHERE status != 'comlete'")
+				r, err := db.Query("SELECT ID, FName, LName, Date, CASE WHEN RepairID=-1 THEN 'Complectation' ELSE 'Repair' END AS REQUEST_TYPE FROM requests WHERE status != 'Ready'")
 				if err != nil {
 					fmt.Println(err)
 					fmt.Println("Server:\\>")
@@ -682,7 +916,7 @@ func RequestGetter(db *sql.DB) {
 					InitResChan <- r
 				}
 			case id:=<-IDTReqChan:
-				q:=fmt.Sprintf("SELECT CASE WHEN RepairID IS NULL THEN 'Complectation' ELSE 'Repair' END AS REQUEST_TYPE FROM requests WHERE ID=%d", id)
+				q:=fmt.Sprintf("SELECT CASE WHEN RepairID=-1 THEN 'Complectation' ELSE 'Repair' END AS REQUEST_TYPE FROM requests WHERE ID=%d", id)
 				r, err := db.Query(q)
 				if err != nil {
 					fmt.Println(err)
@@ -707,7 +941,7 @@ func RequestGetter(db *sql.DB) {
 					IDResChan <- r
 				}
 			case user:=<-UserReqChan:
-				q:=fmt.Sprintf("SELECT AID, password FROM Accounts WHERE login=%s", user.Login)
+				q:=fmt.Sprintf("SELECT AID, password FROM Accounts WHERE login='%s'", user.Login)
 				r, err := db.Query(q)
 				if err != nil {
 					fmt.Println(err)
@@ -717,7 +951,8 @@ func RequestGetter(db *sql.DB) {
 					UserResChan <- r
 				}
 			case id:=<-EmailReqChan:
-				r, err := db.Query("SELECT Email FROM requests WHERE id=%d",id)
+				q:=fmt.Sprintf("SELECT Email FROM requests WHERE id=%d",id)
+				r, err := db.Query(q)
 				if err != nil {
 					fmt.Println(err)
 					fmt.Println("Server:\\>")
@@ -725,10 +960,57 @@ func RequestGetter(db *sql.DB) {
 				} else {
 					EmailResChan <- r
 				}
+			case q:=<-QReqChan:
+				r, err := db.Query(q)
+				db.Exec("INSERT INTO Audit VALUES (NULL,1,'Used query: "+q+"')")
+				QResChan<-RowErr{r,err}
 			default:
 		}
 	}
 	done <- true
+}
+
+func ProcessSQL(q string) string {
+	QReqChan <- q
+	re := <-QResChan
+	err:=re.err
+	r:=re.r
+	var res string
+	if err != nil {
+		res = fmt.Sprint(err)
+	} else {
+		if !r.Next() {
+			res = "Query completed successfully."
+		} else {
+			res=`<table>`
+			columns, _ :=r.Columns()
+			res+=`<tr>`
+			for _, c := range columns {
+				res+=`<th>`+c+`</th>`
+			}
+			res+=`</tr>`
+			for {
+				var ress []string = make([]string, len(columns))
+				r.Scan((StrToPtr(ress))...)
+				res+=`<tr>`
+				for i, _ := range columns {
+					res+=`<td>`+ress[i]+`</td>`
+				}
+				res+=`</tr>`
+				if !r.Next() {break}
+			}
+			res+=`</table>`
+		}
+	}
+	return res
+}
+
+func StrToPtr(s []string) []any {
+	var p []any = make([]any, len(s))
+	for i:=range s {
+		p[i]=&(s[i])
+	}
+	return p
 }
 
 func GetEmailByID(id int) string {
@@ -777,7 +1059,7 @@ func GetDBInfoByID(id int) string {
 					case "store-delivery": delivery="Veikalā"
 					default: delivery="Veikalā"
 				}
-				res=fmt.Sprintf(template,buff.FName,buff.LName,buff.Email,T,buff.PType,buff.Model,buff.Phone,delivery,buff.Status,buff.Problem,&buff.Date)
+				res=fmt.Sprintf(template,buff.FName,buff.LName,buff.Email,T,buff.PType,buff.Model,buff.Phone,delivery,buff.Status,buff.Problem,buff.Date)
 			case "Complectation":
 				var buff requestAssembly
 				resRows.Scan(&buff.FName,&buff.LName,&buff.Email,&buff.Phone,&buff.RType,&buff.DAdress,&buff.Status,&buff.Date, &buff.Case, &buff.Motherboard, &buff.CPU, &buff.GPU, &buff.RAM, &buff.Storage, &buff.Notes)
@@ -789,7 +1071,7 @@ func GetDBInfoByID(id int) string {
 					case "store-delivery": delivery="Veikalā"
 					default: delivery="Veikalā"
 				}
-				res=fmt.Sprintf(template,buff.FName,buff.LName,buff.Email,T,buff.Case, buff.Motherboard, buff.CPU, buff.GPU, buff.RAM, buff.Storage,buff.Phone,delivery,buff.Status,buff.Notes,&buff.Date)
+				res=fmt.Sprintf(template,buff.FName,buff.LName,buff.Email,T,buff.Case, buff.Motherboard, buff.CPU, buff.GPU, buff.RAM, buff.Storage,buff.Phone,delivery,buff.Status,buff.Notes,buff.Date)
 			default:
 				fmt.Println("Is this Riekstiņš order?")
 				fmt.Print("Server:\\>")
@@ -845,6 +1127,8 @@ func GetDBInitInfo() string {
 		}
 		resjson+=fmt.Sprintf(template, tp, src.CreationDate, src.FName, src.LName, src.ID)
 	}
-	resjson = resjson[:len(resjson)-1]
+	if len(ress)>0 {
+		resjson = resjson[:len(resjson)-1]
+	}
 	return resjson
 }

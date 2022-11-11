@@ -162,7 +162,7 @@ window.addEventListener('beforeunload', function (e) {
 
 
 function sendStatus() {
-	var statusMsg = document.getElementsByName('statusType').item(0).value;
+	var statusMsg = document.querySelector('input[name="statusType"]:checked').value;
 	console.log("statusmsg: " + statusMsg);
 
 	var commentMsg = $('update-comment').value;

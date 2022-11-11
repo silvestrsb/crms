@@ -1,7 +1,23 @@
-# Datorservisa pieteikumu sistēmas grupas projekts
-Projekta Statuss:  
-* Silvestrs - klienta pieteikuma forma - Iesākta front-end daļa, kas spēj nosūtīt POST request uz GO API 
-* Artūrs L. iesācis veidot GO backend, spēj saņemt JSON POST requests
-* Juris - darbojas pie darbinieku interfeisa
-* Romāns - darbojas pie datubāzes struktūras priekš GO backend
-* Roberts, Artūrs Ivko, Edvards Matisāns - testēšanas dokumentāciju veido - https://docs.google.com/document/d/1UUcA63nWBxP8IOMAtAj7Rx7b7k9gTMYJth9HLTG_FaA/edit?usp=sharing
+# Made by:
+Silvestrs Beļinskis
+Juris Gusevs
+Romāns Šardakovs
+Artūrs Lazebņiks
+Artūrs Ivko
+Edvards Matisāns
+Roberts Zande
+
+# Client Form
+![Client Form](/pictures/Client.png "This is Client Form, they need to fill.")
+
+# Login
+![Login](/pictures/Login.png "This is Login page.")
+
+# Worker UI
+![Worker UI](/pictures/WorkerUI.png "This is Worker interface.")
+
+# Server Console
+![Server Console](/pictures/Server.png "This is Admin Server Console.")
+
+# Database Console
+![Database Console](/pictures/Database.png "This is Admin Database Console.")

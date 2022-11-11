@@ -30,6 +30,7 @@
 	<body style="background-color: #dbdbd8">
 		<table class="table table-striped table-dark">
 			<tr class="bg-info">
+				<th style="text-align:center;">ID</th>
 				<th>Pieprasījuma informācija</th>
 				<th>Darbība Nr. 1</th>
 				<th>Darbība Nr. 2</th>
@@ -171,7 +172,7 @@
   
   <!-- Modal - Server -->
   <div class="modal fade" id="serverModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-xl">
+	<div class="modal-dialog modal-xl modal-dialog-centered">
 	  <div style="background-color: black; color:white" class="modal-content">
 		<div class="modal-header">
 		  <h5 class="modal-title" id="exampleModalLabel">Server</h5>
@@ -179,12 +180,12 @@
 		</div>
 		<div style="max-height: 250px; overflow-y: auto;" class="modal-body">
 			<label for="cmd">Server:\> </label>
-			<input style="background-color: black; border: 0px solid; color:white;" type="text" 
+			<input placeholder="Command Here" style="background-color: black; border: 0px solid; color:white;" type="text" 
 			onkeydown = "if (event.keyCode == 13) Server(); 
 						 if (event.keyCode == 13) cmd.value='';"  
-			id="cmd" name="cmd"><br>
+			id="cmd" name="cmd" size="120"><br>
 			
-			<div id="server-response-text">Text</div>
+			<div id="server-response-text"></div>
 
 		  <br><br><br><br><br><br><br><br>
 		</div>
@@ -199,26 +200,27 @@
 
   <!-- Modal - Database -->
   <div class="modal fade" id="databaseModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-xl">
-	  <div style="background-color: black; color:white" class="modal-content">
+	<div class="modal-dialog modal-xl modal-dialog-centered">
+	  <div style="background-color: rgb(29, 28, 28); color:white" class="modal-content">
 		<div class="modal-header">
 		  <h5 class="modal-title" id="exampleModalLabel">Database</h5>
 		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 		</div>
 		<div class="modal-body">
-		  ...
+			<h1 style="font-size:larger">Query MySQL database</h1>
+			<textarea placeholder="SELECT * FROM Table" id="sql-query" name="sql-query" rows="4" cols="80"></textarea><br>
+			<h1 style="font-size:larger">Query Result</h1>
+			<div id="query-response"></div>
+
 		  <br><br><br><br><br><br><br><br>
 		</div>
 		<div class="modal-footer">
-		  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-		  <button type="button" class="btn btn-primary">Save changes</button>
+				<button type="button" style="text-align:left;" class="btn btn-light" onclick="Database()">Query</button>
 		</div>
 	  </div>
 	</div>
   </div>
-
-
-		<!-- script src="Worker.js?sid=%d" type="text/javascript"></script-->
+		<script src="Worker.js?sid=%d" type="text/javascript"></script>
         <script src="admin.js?sid=%d" type="text/javascript"></script>
 	</body>
 </html>
